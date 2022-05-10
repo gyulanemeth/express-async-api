@@ -32,5 +32,3 @@ exposed _expressServer for testing (with supertest)
 
 ## Upcoming features
  - custom error handlers for routes
- - redirects
- - logger
