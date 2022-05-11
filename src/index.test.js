@@ -5,8 +5,9 @@ import createApiServer from './index.js'
 describe('createApiServer', () => {
   let expressServer
   let apiServer
+  let loggerCalledWithRoute = ''
   beforeAll(() => {
-    apiServer = createApiServer((err, res) => res.status(err.status || 500).json({ error: { message: err.message } }))
+    apiServer = createApiServer((err) => ({ error: { message: err.message } }), (req) => { loggerCalledWithRoute = req.path })
     expressServer = apiServer._expressServer
 
     apiServer.get('/get', async () => ({ result: 'get' }))
@@ -18,61 +19,127 @@ describe('createApiServer', () => {
     apiServer.post('/post-err', async () => { throw new Error('post error') })
     apiServer.put('/put-err', async () => { throw new Error('put error') })
     apiServer.delete('/delete-err', async () => { throw new Error('delete error') })
-  })
-  test('get success', async () => {
-    const res = await request(expressServer).get('/get').send()
 
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual({ result: 'get' })
-  })
-
-  test('get error', async () => {
-    const res = await request(expressServer).get('/get-err').send()
-
-    expect(res.statusCode).toBe(500)
-    expect(res.body).toEqual({ error: { message: 'get error' } })
+    apiServer.get('/get-redirect', async () => ({ redirect: 'https://example.com' }))
+    apiServer.post('/post-redirect', async () => ({ redirect: 'https://example.com' }))
+    apiServer.put('/put-redirect', async () => ({ redirect: 'https://example.com' }))
+    apiServer.delete('/delete-redirect', async () => ({ redirect: 'https://example.com' }))
   })
 
-  test('post success', async () => {
-    const res = await request(expressServer).post('/post').send()
-
-    expect(res.statusCode).toBe(201)
-    expect(res.body).toEqual({ status: 201, result: 'post' })
+  beforeEach(() => {
+    loggerCalledWithRoute = ''
   })
 
-  test('post error', async () => {
-    const res = await request(expressServer).post('/post-err').send()
+  describe('Success', () => {
+    test('GET', async () => {
+      const res = await request(expressServer).get('/get').send()
 
-    expect(res.statusCode).toBe(500)
-    expect(res.body).toEqual({ error: { message: 'post error' } })
+      expect(res.statusCode).toBe(200)
+      expect(res.body).toEqual({ result: 'get' })
+      expect(loggerCalledWithRoute).toBe('/get')
+    })
+
+    test('POST', async () => {
+      const res = await request(expressServer).post('/post').send()
+
+      expect(res.statusCode).toBe(201)
+      expect(res.body).toEqual({ status: 201, result: 'post' })
+      expect(loggerCalledWithRoute).toBe('/post')
+    })
+
+    test('PUT', async () => {
+      const res = await request(expressServer).put('/put').send()
+
+      expect(res.statusCode).toBe(200)
+      expect(res.body).toEqual({ status: 200, result: 'put' })
+      expect(loggerCalledWithRoute).toBe('/put')
+    })
+
+    test('DELETE', async () => {
+      const res = await request(expressServer).delete('/delete').send()
+
+      expect(res.statusCode).toBe(200)
+      expect(res.body).toEqual({ status: 200, result: 'delete' })
+      expect(loggerCalledWithRoute).toBe('/delete')
+    })
   })
 
-  test('put success', async () => {
-    const res = await request(expressServer).put('/put').send()
+  describe('Redirect', () => {
+    test('GET', async () => {
+      const res = await request(expressServer).get('/get-redirect').send()
 
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual({ status: 200, result: 'put' })
+      expect(res.statusCode).toBe(302)
+      expect(res.header.location).toBe('https://example.com')
+      expect(loggerCalledWithRoute).toBe('/get-redirect')
+    })
+
+    test('POST', async () => {
+      const res = await request(expressServer).post('/post-redirect').send()
+
+      expect(res.statusCode).toBe(302)
+      expect(res.header.location).toBe('https://example.com')
+      expect(loggerCalledWithRoute).toBe('/post-redirect')
+    })
+
+    test('PUT', async () => {
+      const res = await request(expressServer).put('/put-redirect').send()
+
+      expect(res.statusCode).toBe(302)
+      expect(res.header.location).toBe('https://example.com')
+      expect(loggerCalledWithRoute).toBe('/put-redirect')
+    })
+
+    test('DELETE', async () => {
+      const res = await request(expressServer).delete('/delete-redirect').send()
+
+      expect(res.statusCode).toBe(302)
+      expect(res.header.location).toBe('https://example.com')
+      expect(loggerCalledWithRoute).toBe('/delete-redirect')
+    })
   })
 
-  test('put error', async () => {
-    const res = await request(expressServer).put('/put-err').send()
+  describe('Global error handler', () => {
+    test('GET', async () => {
+      const res = await request(expressServer).get('/get-err').send()
 
-    expect(res.statusCode).toBe(500)
-    expect(res.body).toEqual({ error: { message: 'put error' } })
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toEqual({ error: { message: 'get error' } })
+      expect(loggerCalledWithRoute).toBe('/get-err')
+    })
+
+    test('POST', async () => {
+      const res = await request(expressServer).post('/post-err').send()
+
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toEqual({ error: { message: 'post error' } })
+      expect(loggerCalledWithRoute).toBe('/post-err')
+    })
+
+    test('PUT', async () => {
+      const res = await request(expressServer).put('/put-err').send()
+
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toEqual({ error: { message: 'put error' } })
+      expect(loggerCalledWithRoute).toBe('/put-err')
+    })
+
+    test('DELETE', async () => {
+      const res = await request(expressServer).delete('/delete-err').send()
+
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toEqual({ error: { message: 'delete error' } })
+      expect(loggerCalledWithRoute).toBe('/delete-err')
+    })
   })
 
-  test('delete success', async () => {
-    const res = await request(expressServer).delete('/delete').send()
+  test('Without error logger', async () => {
+    const apiServer = createApiServer((err) => ({ error: { message: err.message } }))
+    expressServer = apiServer._expressServer
 
-    expect(res.statusCode).toBe(200)
-    expect(res.body).toEqual({ status: 200, result: 'delete' })
-  })
+    apiServer.get('/get', async () => ({ result: 'get' }))
 
-  test('delete error', async () => {
-    const res = await request(expressServer).delete('/delete-err').send()
-
-    expect(res.statusCode).toBe(500)
-    expect(res.body).toEqual({ error: { message: 'delete error' } })
+    await request(expressServer).get('/get').send()
+    expect(loggerCalledWithRoute).toBe('')
   })
 
   test('listen', async () => {
