@@ -1,6 +1,6 @@
 {
   "name": "express-async-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A wrapper on top of express.js for  simple API creation.",
   "type": "module",
   "main": "src/index.js",
