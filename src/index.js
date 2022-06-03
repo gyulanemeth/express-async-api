@@ -41,6 +41,10 @@ export default function createApiServer (onError, log) {
     expressServer.put(route, createRequestHandler(handlerPromise, onError, log))
   }
 
+  function patch (route, handlerPromise) {
+    expressServer.patch(route, createRequestHandler(handlerPromise, onError, log))
+  }
+
   function del (route, handlerPromise) {
     expressServer.delete(route, createRequestHandler(handlerPromise, onError, log))
   }
@@ -55,6 +59,7 @@ export default function createApiServer (onError, log) {
     get,
     post,
     put,
+    patch,
     delete: del,
 
     listen

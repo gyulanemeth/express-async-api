@@ -13,16 +13,19 @@ describe('createApiServer', () => {
     apiServer.get('/get', async () => ({ result: 'get' }))
     apiServer.post('/post', async () => ({ status: 201, result: 'post' }))
     apiServer.put('/put', async () => ({ status: 200, result: 'put' }))
+    apiServer.patch('/patch', async () => ({ status: 200, result: 'patch' }))
     apiServer.delete('/delete', async () => ({ status: 200, result: 'delete' }))
 
     apiServer.get('/get-err', async () => { throw new Error('get error') })
     apiServer.post('/post-err', async () => { throw new Error('post error') })
     apiServer.put('/put-err', async () => { throw new Error('put error') })
+    apiServer.patch('/patch-err', async () => { throw new Error('patch error') })
     apiServer.delete('/delete-err', async () => { throw new Error('delete error') })
 
     apiServer.get('/get-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.post('/post-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.put('/put-redirect', async () => ({ redirect: 'https://example.com' }))
+    apiServer.patch('/patch-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.delete('/delete-redirect', async () => ({ redirect: 'https://example.com' }))
   })
 
@@ -53,6 +56,14 @@ describe('createApiServer', () => {
       expect(res.statusCode).toBe(200)
       expect(res.body).toEqual({ status: 200, result: 'put' })
       expect(loggerCalledWithRoute).toBe('/put')
+    })
+
+    test('PATCH', async () => {
+      const res = await request(expressServer).patch('/patch').send()
+
+      expect(res.statusCode).toBe(200)
+      expect(res.body).toEqual({ status: 200, result: 'patch' })
+      expect(loggerCalledWithRoute).toBe('/patch')
     })
 
     test('DELETE', async () => {
@@ -89,6 +100,14 @@ describe('createApiServer', () => {
       expect(loggerCalledWithRoute).toBe('/put-redirect')
     })
 
+    test('PATCH', async () => {
+      const res = await request(expressServer).patch('/patch-redirect').send()
+
+      expect(res.statusCode).toBe(302)
+      expect(res.header.location).toBe('https://example.com')
+      expect(loggerCalledWithRoute).toBe('/patch-redirect')
+    })
+
     test('DELETE', async () => {
       const res = await request(expressServer).delete('/delete-redirect').send()
 
@@ -121,6 +140,14 @@ describe('createApiServer', () => {
       expect(res.statusCode).toBe(500)
       expect(res.body).toEqual({ error: { message: 'put error' } })
       expect(loggerCalledWithRoute).toBe('/put-err')
+    })
+
+    test('PATCH', async () => {
+      const res = await request(expressServer).patch('/patch-err').send()
+
+      expect(res.statusCode).toBe(500)
+      expect(res.body).toEqual({ error: { message: 'patch error' } })
+      expect(loggerCalledWithRoute).toBe('/patch-err')
     })
 
     test('DELETE', async () => {
