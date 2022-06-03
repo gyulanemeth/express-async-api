@@ -93,6 +93,17 @@ apiServer.put('/your/:route/is/here', async req => {
 })
 ```
 
+### apiServer.patch(route, handler)
+
+```javascript
+apiServer.patch('/your/:route/is/here', async req => {
+  return {
+    status: 200,
+    result: { ... }
+  }
+})
+```
+
 ### apiServer.delete(route, handler)
 
 ```javascript
