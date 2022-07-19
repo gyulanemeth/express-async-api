@@ -23,11 +23,11 @@ function createRequestHandler (callback, onError, log) {
   }
 }
 
-export default function createApiServer (onError, log) {
+export default function createApiServer (onError, log, settings = {}) {
   const expressServer = express()
 
   expressServer.use(cors())
-  expressServer.use(express.json())
+  expressServer.use(express.json({ limit: settings.limit || '100kb' }))
 
   function get (route, handlerPromise) { // meg kéne tudni adni custom onError handlereket is, ha valaki explicit akarja mutatni, hogy milyen errorok lehetnek. Ebben az esetben is, ha nincs kezelve az error azon a helyen, akkor tovább kéne küldeni a default error handlernek. Simán tovább throwolhatják az errort abban az esetben...
     expressServer.get(route, createRequestHandler(handlerPromise, onError, log))
