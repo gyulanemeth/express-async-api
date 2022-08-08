@@ -1,5 +1,20 @@
 import express from 'express'
 import cors from 'cors'
+import multer from 'multer'
+
+let fileAllowedTypes = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif']
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    if (fileAllowedTypes.includes(file.mimetype)) {
+      cb(null, true)
+    } else {
+      req.file_error = 'file not allowed Only .png, .jpg and .jpeg format allowed!'
+      return cb(null, false)
+    }
+  }
+})
 
 function createRequestHandler (callback, onError, log) {
   return async (req, res) => {
@@ -33,16 +48,20 @@ export default function createApiServer (onError, log, settings = {}) {
     expressServer.get(route, createRequestHandler(handlerPromise, onError, log))
   }
 
+  function setAllowedFiles (fileTypes) {
+    fileAllowedTypes = fileTypes
+  }
+
   function post (route, handlerPromise) {
-    expressServer.post(route, createRequestHandler(handlerPromise, onError, log))
+    expressServer.post(route, upload.any(), createRequestHandler(handlerPromise, onError, log))
   }
 
   function put (route, handlerPromise) {
-    expressServer.put(route, createRequestHandler(handlerPromise, onError, log))
+    expressServer.put(route, upload.any(), createRequestHandler(handlerPromise, onError, log))
   }
 
   function patch (route, handlerPromise) {
-    expressServer.patch(route, createRequestHandler(handlerPromise, onError, log))
+    expressServer.patch(route, upload.any(), createRequestHandler(handlerPromise, onError, log))
   }
 
   function del (route, handlerPromise) {
@@ -55,7 +74,7 @@ export default function createApiServer (onError, log, settings = {}) {
 
   return {
     _expressServer: expressServer, // published for testing purposes with supertest
-
+    setAllowedFiles,
     get,
     post,
     put,

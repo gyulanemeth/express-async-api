@@ -1,5 +1,4 @@
 import request from 'supertest'
-
 import createApiServer from './index.js'
 
 describe('createApiServer', () => {
@@ -173,5 +172,35 @@ describe('createApiServer', () => {
     const server = apiServer.listen(3000)
     expect(server.address()).toBeTruthy()
     server.close()
+  })
+})
+
+describe('Multer upload files', () => {
+  let expressServer
+  let apiServer
+  beforeAll(() => {
+    apiServer = createApiServer((err) => ({ error: { message: err.message } }), () => {})
+    expressServer = apiServer._expressServer
+
+    apiServer.post('/file', async (req) => ({ status: 201, result: req.files }))
+    apiServer.post('/fileTypeError', async (req) => ({ result: req.file_error }))
+  })
+
+  test('File type not allowed', async () => {
+    const file = Buffer.from('whatever')
+    file.name = 'filename'
+    file.mimetype = 'application/octet-stream'
+    const res = await request(expressServer).post('/fileTypeError').attach('files', file)
+    expect(res.body.result).toBe('file not allowed Only .png, .jpg and .jpeg format allowed!')
+  })
+
+  test('Success upload file', async () => {
+    const file = Buffer.from('whatever')
+    file.name = 'filename'
+    file.mimetype = 'application/octet-stream'
+    apiServer.setAllowedFiles(['application/octet-stream'])
+    const res = await request(expressServer).post('/file').attach('files', file)
+    expect(res.statusCode).toBe(201)
+    expect(res.body.result[0].originalname).toBe(file.name)
   })
 })
