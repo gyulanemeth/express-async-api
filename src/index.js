@@ -1,5 +1,8 @@
 import express from 'express'
 import cors from 'cors'
+import multer from 'multer'
+
+import { ValidationError } from 'standard-api-errors'
 
 function createRequestHandler (callback, onError, log) {
   return async (req, res) => {
@@ -29,8 +32,32 @@ export default function createApiServer (onError, log, settings = {}) {
   expressServer.use(cors())
   expressServer.use(express.json({ limit: settings.limit || '100kb' }))
 
-  function get (route, handlerPromise) { // meg kéne tudni adni custom onError handlereket is, ha valaki explicit akarja mutatni, hogy milyen errorok lehetnek. Ebben az esetben is, ha nincs kezelve az error azon a helyen, akkor tovább kéne küldeni a default error handlernek. Simán tovább throwolhatják az errort abban az esetben...
+  function get (route, handlerPromise) {
     expressServer.get(route, createRequestHandler(handlerPromise, onError, log))
+  }
+
+  function postBinary(route, settings, handlerPromise) {
+    const upload = multer({
+      storage: multer.memoryStorage(),
+      fileFilter: (req, file, cb) => {
+        if (settings.mimeTypes.includes(file.mimetype)) {
+          cb(null, true)
+        }
+        return cb(new ValidationError(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${settings.mimeTypes.join(',')}`), false)
+      }
+    })
+    
+    expressServer.post(route, createRequestHandler(async () => {
+      await new Promise((resolve, reject) => {
+        upload.single(settings.fieldName)(req, null, function(err) {
+          if (err) {
+            return reject(err)
+          }
+          resolve()
+        })
+      })
+      return handlerPromise()
+    }, onError, log))
   }
 
   function post (route, handlerPromise) {
@@ -58,6 +85,7 @@ export default function createApiServer (onError, log, settings = {}) {
 
     get,
     post,
+    postBinary,
     put,
     patch,
     delete: del,
