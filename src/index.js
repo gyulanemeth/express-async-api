@@ -8,7 +8,6 @@ function createRequestHandler (callback, onError, log) {
   return async (req, res) => {
     try {
       const result = await callback(req)
-
       if (result.redirect) {
         res.redirect(result.status || 302, result.redirect)
       } else {
@@ -36,27 +35,27 @@ export default function createApiServer (onError, log, settings = {}) {
     expressServer.get(route, createRequestHandler(handlerPromise, onError, log))
   }
 
-  function postBinary(route, settings, handlerPromise) {
+  function postBinary (route, settings, handlerPromise) {
     const upload = multer({
       storage: multer.memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (settings.mimeTypes.includes(file.mimetype)) {
-          cb(null, true)
+          return cb(null, true)
         }
         return cb(new ValidationError(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${settings.mimeTypes.join(',')}`), false)
       }
     })
-    
-    expressServer.post(route, createRequestHandler(async () => {
+
+    expressServer.post(route, createRequestHandler(async (req) => {
       await new Promise((resolve, reject) => {
-        upload.single(settings.fieldName)(req, null, function(err) {
+        upload.single(settings.fieldName)(req, null, function (err) {
           if (err) {
             return reject(err)
           }
           resolve()
         })
       })
-      return handlerPromise()
+      return handlerPromise(req)
     }, onError, log))
   }
 
