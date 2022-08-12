@@ -1,6 +1,13 @@
+import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
+
 import request from 'supertest'
 
 import createApiServer from './index.js'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const testPic = fs.readFileSync(path.join(__dirname, '..', 'testPics', 'test.png'))
 
 describe('createApiServer', () => {
   let expressServer
@@ -173,5 +180,44 @@ describe('createApiServer', () => {
     const server = apiServer.listen(3000)
     expect(server.address()).toBeTruthy()
     server.close()
+  })
+})
+
+describe('Multer upload files', () => {
+  let expressServer
+  let apiServer
+
+  beforeAll(() => {
+    apiServer = createApiServer((err) => ({ error: { message: err.message } }), () => {})
+    expressServer = apiServer._expressServer
+
+    apiServer.postBinary('/file', { mimeTypes: ['image/png'], fieldName: 'test' }, async req => {
+      return {
+        status: 200,
+        result: { file: req.file }
+      }
+    })
+  })
+
+  test('File type not allowed', async () => {
+    const file = Buffer.from('whatever')
+    file.name = 'test'
+    file.mimetype = 'application/octet-stream'
+    const res = await request(expressServer).post('/file').attach('test', file)
+    expect(res.body.error.message).toBe(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${['image/png'].join(',')}`)
+  })
+
+  test('File unexpected fieldName ', async () => {
+    const file = Buffer.from('whatever')
+    file.name = 'test'
+    file.mimetype = 'application/octet-stream'
+    const res = await request(expressServer).post('/file').attach('file', file)
+    expect(res.body.error.message).toBe('Unexpected field')
+  })
+
+  test('Success upload file', async () => {
+    const res = await request(expressServer).post('/file').attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
+    expect(res.body.status).toBe(200)
+    expect(Buffer.from(res.body.result.file.buffer.data)).toEqual(testPic)
   })
 })
