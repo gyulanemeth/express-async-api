@@ -89,7 +89,12 @@ The `settings` object must conftain the following properties:
  - mimeTypes (array of strings): containing the allowed mime types. If the uploaded file's mime type is not in the array, then a `ValidationError` will be thrown from the [standard-api-errors](https://github.com/gyulanemeth/standard-api-errors/blob/master/src/index.js) lib, which translates to a HTTP 400 respones.
 
 ```javascript
-apiServer.post('/your/:route/is/here', async req => {
+const settings = {
+  fieldName: 'avatar',
+  mimeTypes: ['image/png', 'image/jpeg', 'image/gif']
+}
+
+apiServer.post('/your/:route/is/here', settings, async req => {
   return {
     status: 201,
     result: { ... }
