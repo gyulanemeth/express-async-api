@@ -82,6 +82,26 @@ apiServer.post('/your/:route/is/here', async req => {
 })
 ```
 
+### apiServer.postBinary(route, settings, handler)
+
+The `settings` object must conftain the following properties:
+ - fieldName (string): the name of the input field from which the server ready the binary data. (The name of the form field on the frontend that holds the binary.)
+ - mimeTypes (array of strings): containing the allowed mime types. If the uploaded file's mime type is not in the array, then a `ValidationError` will be thrown from the [standard-api-errors](https://github.com/gyulanemeth/standard-api-errors/blob/master/src/index.js) lib, which translates to a HTTP 400 respones.
+
+```javascript
+const settings = {
+  fieldName: 'avatar',
+  mimeTypes: ['image/png', 'image/jpeg', 'image/gif']
+}
+
+apiServer.post('/your/:route/is/here', settings, async req => {
+  return {
+    status: 201,
+    result: { ... }
+  }
+})
+```
+
 ### apiServer.put(route, handler)
 
 ```javascript
@@ -129,6 +149,18 @@ async function handler(req) {
 }
 ```
 
+## Binary response
+If you want to respond with binary data.
+
+```javascript
+async function handler(req) {
+  ...
+  return {
+    binary: <Node JS Buffer ...>
+  }
+}
+```
+
 ## Errors & Logging
 
 If you take a look at the first example, you can see, that the `createApiServer` function has two parameters. The first is an error handler callback, the second is a callback for logging.
@@ -141,4 +173,3 @@ The log callback is optional. It recieves the original express req and res objec
 ## Upcoming features
  - custom error handlers for routes
  - execution time -> log function
- - handling binary data

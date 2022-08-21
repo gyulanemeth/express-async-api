@@ -1,3 +1,5 @@
+import { describe, test, expect, beforeAll, beforeEach } from 'vitest'
+
 import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
@@ -34,6 +36,14 @@ describe('createApiServer', () => {
     apiServer.put('/put-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.patch('/patch-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.delete('/delete-redirect', async () => ({ redirect: 'https://example.com' }))
+
+    apiServer.get('/get-binary', async () => {
+      const testImage = fs.readFileSync(path.join(__dirname, '..', 'testPics', 'test.png'))
+
+      return {
+        binary: testImage
+      }
+    })
   })
 
   beforeEach(() => {
@@ -79,6 +89,14 @@ describe('createApiServer', () => {
       expect(res.statusCode).toBe(200)
       expect(res.body).toEqual({ status: 200, result: 'delete' })
       expect(loggerCalledWithRoute).toBe('/delete')
+    })
+
+    test('binary result', async () => {
+      const res = await request(expressServer).get('/get-binary')
+      expect(res.statusCode).toBe(200)
+      const expectedBinary = fs.readFileSync(path.join(__dirname, '..', 'testPics', 'test.png'))
+      expect(Buffer.compare(res.body, expectedBinary)).toBe(0)
+      expect(res.header['content-type']).toBe('image/png')
     })
   })
 

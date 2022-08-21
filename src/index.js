@@ -1,6 +1,7 @@
 import express from 'express'
 import cors from 'cors'
 import multer from 'multer'
+import { fileTypeFromBuffer } from 'file-type'
 
 import { ValidationError } from 'standard-api-errors'
 
@@ -10,6 +11,9 @@ function createRequestHandler (callback, onError, log) {
       const result = await callback(req)
       if (result.redirect) {
         res.redirect(result.status || 302, result.redirect)
+      } else if (result.binary) {
+        res.setHeader('Content-Type', (await fileTypeFromBuffer(result.binary)).mime)
+        res.end(result.binary)
       } else {
         res.status(result.status || 200).json(result)
       }
