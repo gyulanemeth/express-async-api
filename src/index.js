@@ -14,6 +14,9 @@ function createRequestHandler (callback, onError, log) {
       } else if (result.binary) {
         res.setHeader('Content-Type', (await fileTypeFromBuffer(result.binary)).mime)
         res.end(result.binary)
+      } else if (result.attachment) {
+        res.attachment(result.attachment.name)
+        res.end(result.attachment.data)
       } else {
         res.status(result.status || 200).json(result)
       }
