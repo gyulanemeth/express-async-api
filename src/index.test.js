@@ -44,6 +44,13 @@ describe('createApiServer', () => {
         binary: testImage
       }
     })
+
+    apiServer.get('/get-attachment', async () => ({
+      attachment: {
+        name: 'test.text',
+        data: Buffer.from('test text for .text file')
+      }
+    }))
   })
 
   beforeEach(() => {
@@ -91,12 +98,23 @@ describe('createApiServer', () => {
       expect(loggerCalledWithRoute).toBe('/delete')
     })
 
-    test('binary result', async () => {
+    test('Binary result', async () => {
       const res = await request(expressServer).get('/get-binary')
+
       expect(res.statusCode).toBe(200)
       const expectedBinary = fs.readFileSync(path.join(__dirname, '..', 'testPics', 'test.png'))
       expect(Buffer.compare(res.body, expectedBinary)).toBe(0)
       expect(res.header['content-type']).toBe('image/png')
+    })
+
+    test('GET Attachment', async () => {
+      const res = await request(expressServer).get('/get-attachment').send()
+
+      expect(res.statusCode).toBe(200)
+      expect(res.header['content-type']).toBe('text/plain; charset=utf-8')
+      expect(res.header['content-disposition']).toBe('attachment; filename="test.text"')
+      expect(res.text).toBe('test text for .text file')
+      expect(loggerCalledWithRoute).toBe('/get-attachment')
     })
   })
 
