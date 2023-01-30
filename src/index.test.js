@@ -111,7 +111,9 @@ describe('createApiServer', () => {
       const res = await request(expressServer).get('/get-attachment').send()
 
       expect(res.statusCode).toBe(200)
-      expect(res.type).toBe('text/plain')
+      expect(res.header['content-type']).toBe('text/plain; charset=utf-8')
+      expect(res.header['content-disposition']).toBe('attachment; filename="test.text"')
+      expect(res.text).toBe('test text for .text file')
       expect(loggerCalledWithRoute).toBe('/get-attachment')
     })
   })
