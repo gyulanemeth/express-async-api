@@ -234,7 +234,7 @@ describe('Multer upload files', () => {
       }
     })
 
-    apiServer.postBinary('/limited-file', { mimeTypes: ['image/png'], fieldName: 'test', limits: '0' }, async req => {
+    apiServer.postBinary('/limited-file', { mimeTypes: ['image/png'], fieldName: 'test', maxFileSize: '0' }, async req => {
       return {
         status: 200,
         result: { file: req.file }

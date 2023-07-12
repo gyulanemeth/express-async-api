@@ -52,8 +52,8 @@ export default function createApiServer (onError, log, settings = {}) {
         return cb(new ValidationError(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${settings.mimeTypes.join(',')}`), false)
       }
     }
-    if (settings.limits) {
-      multerConfig.limits = { fileSize: Number(settings.limits) }
+    if (settings.maxFileSize) {
+      multerConfig.limits = { fileSize: Number(settings.maxFileSize) }
     }
     const upload = multer(multerConfig)
 
