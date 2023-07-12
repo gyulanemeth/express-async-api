@@ -43,7 +43,7 @@ export default function createApiServer (onError, log, settings = {}) {
   }
 
   function postBinary (route, settings, handlerPromise) {
-    const upload = multer({
+    const multerConfig = {
       storage: multer.memoryStorage(),
       fileFilter: (req, file, cb) => {
         if (settings.mimeTypes.includes(file.mimetype)) {
@@ -51,7 +51,11 @@ export default function createApiServer (onError, log, settings = {}) {
         }
         return cb(new ValidationError(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${settings.mimeTypes.join(',')}`), false)
       }
-    })
+    }
+    if (settings.maxFileSize) {
+      multerConfig.limits = { fileSize: Number(settings.maxFileSize) }
+    }
+    const upload = multer(multerConfig)
 
     expressServer.post(route, createRequestHandler(async (req) => {
       await new Promise((resolve, reject) => {

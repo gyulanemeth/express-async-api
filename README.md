@@ -87,6 +87,9 @@ apiServer.post('/your/:route/is/here', async req => {
 The `settings` object must conftain the following properties:
  - fieldName (string): the name of the input field from which the server ready the binary data. (The name of the form field on the frontend that holds the binary.)
  - mimeTypes (array of strings): containing the allowed mime types. If the uploaded file's mime type is not in the array, then a `ValidationError` will be thrown from the [standard-api-errors](https://github.com/gyulanemeth/standard-api-errors/blob/master/src/index.js) lib, which translates to a HTTP 400 respones.
+- maxFileSize (optional, number): the maximum file size limit in bytes. 
+
+The `maxFileSize` property is optional and specifies the maximum file size allowed for upload. If not provided, there is no size limit imposed on the uploaded file
 
 ```javascript
 const settings = {

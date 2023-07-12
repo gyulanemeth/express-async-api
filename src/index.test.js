@@ -233,6 +233,13 @@ describe('Multer upload files', () => {
         result: { file: req.file }
       }
     })
+
+    apiServer.postBinary('/limited-file', { mimeTypes: ['image/png'], fieldName: 'test', maxFileSize: '0' }, async req => {
+      return {
+        status: 200,
+        result: { file: req.file }
+      }
+    })
   })
 
   test('File type not allowed', async () => {
@@ -255,5 +262,10 @@ describe('Multer upload files', () => {
     const res = await request(expressServer).post('/file').attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
     expect(res.body.status).toBe(200)
     expect(Buffer.from(res.body.result.file.buffer.data)).toEqual(testPic)
+  })
+
+  test('upload file limit error', async () => {
+    const res = await request(expressServer).post('/limited-file').attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
+    expect(res.body.error.message).toBe('File too large')
   })
 })
