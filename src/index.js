@@ -46,7 +46,7 @@ export default function createApiServer (onError, log, settings = {}) {
     const multerConfig = {
       storage: multer.memoryStorage(),
       fileFilter: (req, file, cb) => {
-        if (settings.mimeTypes.includes(file.mimetype)) {
+        if (!settings.mimeTypes || settings.mimeTypes.includes(file.mimetype)) {
           return cb(null, true)
         }
         return cb(new ValidationError(`Mime type '${file.mimetype}' not allowed! Allowed mime types are: ${settings.mimeTypes.join(',')}`), false)
@@ -59,7 +59,7 @@ export default function createApiServer (onError, log, settings = {}) {
 
     expressServer.post(route, createRequestHandler(async (req) => {
       await new Promise((resolve, reject) => {
-        upload.single(settings.fieldName)(req, null, function (err) {
+        upload.array(settings.fieldName)(req, null, function (err) {
           if (err) {
             return reject(err)
           }

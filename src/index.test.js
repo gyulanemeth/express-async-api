@@ -230,14 +230,14 @@ describe('Multer upload files', () => {
     apiServer.postBinary('/file', { mimeTypes: ['image/png'], fieldName: 'test' }, async req => {
       return {
         status: 200,
-        result: { file: req.file }
+        result: { files: req.files }
       }
     })
 
     apiServer.postBinary('/limited-file', { mimeTypes: ['image/png'], fieldName: 'test', maxFileSize: '0' }, async req => {
       return {
         status: 200,
-        result: { file: req.file }
+        result: { files: req.files }
       }
     })
   })
@@ -261,7 +261,16 @@ describe('Multer upload files', () => {
   test('Success upload file', async () => {
     const res = await request(expressServer).post('/file').attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
     expect(res.body.status).toBe(200)
-    expect(Buffer.from(res.body.result.file.buffer.data)).toEqual(testPic)
+    expect(Buffer.from(res.body.result.files[0].buffer.data)).toEqual(testPic)
+  })
+
+  test('Success upload multiple files', async () => {
+    const res = await request(expressServer).post('/file')
+      .attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
+      .attach('test', path.join(__dirname, '..', 'testPics', 'test.png'))
+    expect(res.body.status).toBe(200)
+    expect(Buffer.from(res.body.result.files[0].buffer.data)).toEqual(testPic)
+    expect(Buffer.from(res.body.result.files[1].buffer.data)).toEqual(testPic)
   })
 
   test('upload file limit error', async () => {
