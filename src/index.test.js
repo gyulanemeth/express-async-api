@@ -37,6 +37,8 @@ describe('createApiServer', () => {
     apiServer.patch('/patch-redirect', async () => ({ redirect: 'https://example.com' }))
     apiServer.delete('/delete-redirect', async () => ({ redirect: 'https://example.com' }))
 
+    apiServer.post('/post-raw-body', async (req) => ({ result: req.rawBody.toString() }))
+
     apiServer.get('/get-binary', async () => {
       const testImage = fs.readFileSync(path.join(__dirname, '..', 'testPics', 'test.png'))
 
@@ -72,6 +74,16 @@ describe('createApiServer', () => {
       expect(res.statusCode).toBe(201)
       expect(res.body).toEqual({ status: 201, result: 'post' })
       expect(loggerCalledWithRoute).toBe('/post')
+    })
+
+    test('POST keeps the raw JSON body', async () => {
+      const rawBody = '{"name":"V\\u00e1llalkoz\\u00e1s \\u0026 Co"}'
+      const res = await request(expressServer).post('/post-raw-body')
+        .set('Content-Type', 'application/json')
+        .send(rawBody)
+
+      expect(res.statusCode).toBe(200)
+      expect(res.body).toEqual({ result: rawBody })
     })
 
     test('PUT', async () => {
