@@ -36,7 +36,12 @@ export default function createApiServer (onError, log, settings = {}) {
   const expressServer = express()
 
   expressServer.use(cors())
-  expressServer.use(express.json({ limit: settings.limit || '100kb' }))
+  expressServer.use(express.json({
+    limit: settings.limit || '100kb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf // exact request bytes, e.g. for webhook signature verification
+    }
+  }))
 
   function get (route, handlerPromise) {
     expressServer.get(route, createRequestHandler(handlerPromise, onError, log))
